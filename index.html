@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malaysian IC (MyKad) Number Validator</title>
+    <meta name="description" content="A simple page to demonstrate the checksum implementation of the Malaysian IC (MyKad) Number."/>
+    <style>
+        .container{
+            border-style: solid;
+            padding: 2em;
+            background-color: white;
+            max-width:800px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        h1 {
+          margin-top:0;
+        }
+        th, td{
+          padding: 0.5em;
+        }
+
+    </style>
+</head>
+<body bgcolor="#f0f0f2">
+    <div class="container">
+        <h1>Malaysian IC (MyKad) Number Validator</h1>
+        
+        <noscript>Javascript is required.</noscript>
+        <input type="text" name="ic" id="ic" style="line-height:1.5em;font-size:3em;text-align:center;max-width:100%;" placeholder="Input IC here.." autofocus>
+        <br><br>
+        <table border="1" style="margin-left:auto;margin-right:auto;">
+          <tr>
+            <th>Valid?</th>
+            <td class="val" id="valid-val"></td>
+          </tr>
+          <tr>
+            <th>Date of Birth</th>
+            <td class="val" id="dob-val"></td>
+          </tr>
+          <tr>
+            <th>Place of Birth</th>
+            <td class="val" id="pob-val"></td>
+          </tr>
+          <tr>
+            <th>Gender</th>
+            <td class="val" id="gender-val"></td>
+          </tr>
+          <tr>
+            <th>Sequence</th>
+            <td class="val" id="seq-val"></td>
+          </tr>
+          <tr>
+            <th>Checksum</th>
+            <td class="val" id="checksum-val"></td>
+          </tr>
+        </table>
+
+
+        <hr>
+        <div style="text-align:justify;">
+
+          <h2><strong>The Malaysian IC Number Format</strong></h2>
+          <p>The newest version of the Malaysian IC Number consists of 12 digits as shown below:</p>
+          <p><strong>YYMMDD-PB-###G</strong></p>
+          <p>Where <strong>YYMMDD</strong> is the date of birth of the person (may differ in exceptional circumstances),
+            <strong>PB</strong> is the code for the place of birth of the person (either the state in Malaysia or country if born abroad),
+            <strong>###G</strong> is a unique number assigned by JPN, where G represents the gender of the person, odd being male, and even being female.
+          </p>
+          <h2><strong>There's a checksum?</strong></h2>
+          <p>As of September 2023, there is no publicly known checksum that is implemented in the Malaysian IC Number, unlike the Singaporean IC Number. <a href="https://www.lowyat.net/2017/148361/data-breach-fallout-time-review-malaysian-mykad-number/#:~:text=There%20are%20only%203%20random%20numbers%20in%20the%20MyKad%2C%20which%20in%20itself%20doesn%E2%80%99t%20actually%20hold%20any%20kind%20of%20checksum.">See LYN's post on this matter.</a></p>
+          <p>However, through trial and error, it is possible that the Malaysian IC Number does implement a checksum, namely the <a href="https://en.wikipedia.org/wiki/ISO/IEC_7064">ISO 7064 Mod 11,2 checksum algorithm</a>. This algorithm is also used in China's Resident Identity Card Number.</p>
+          <p>Through tests done on publicly available lists of Malaysian IC Numbers, it is highly likely that the ISO 7064 Mod 11,2 checksum algorithm is used to calculate the last digit of the IC number.</p>
+          <h2><strong>Checksum and Gender?</strong></h2>
+          <p>One might ask, how would the last digit of the Malaysian IC Number not only serve as the checksum, but also identify the gender? The ISO standardized checksum surely must be only dependent on the first 11 digits, and an additional parameter should be impossible, right?</p>
+          <p>One theory is that JPN's system sequentially iterates over possible unassigned IC numbers until an IC Number with the corresponding gender is found.</p>
+          <p>For example, a person born on 1 January 2000 in Sarawak would have an IC prefix of 000101-13-####. JPN's system would generate IC numbers from sequence 1 (suffix 001#), and calculate the corresponding checksum (in this case, 6). Therefore, the potential IC number would end with 0016. </p>
+          <p>However, if the person is male, this IC would not be assigned to him due to the last digit being an even number. The system would try again with the next possible sequence, until an IC Number with an odd last digit is found (0024, 0032, 0040, 0059). Therefore, the actual IC Number assigned to the person would end in 0059, providing that the number is not previously assigned to someone else.</p>
+          <p>This would also explain the issue with the MOD11 nature of the checksum. Being MOD11, possible checksum results range from 0 (zero) to 10 (ten). China's Resident Identity Card number uses the character X to represent a checksum of 10. In the Malaysian IC Number however, numbers resulting in a checksum of 10 is simply ignored and skipped.</p>
+          <h2><strong>Why isn't this public?</strong></h2>
+          <p>We don't know. Unlike Singapore, where ICA has publicly acknowledged the existence of the checksum letter (but however does not disclose the actual algorithm, though it has been reverse-engineered), Malaysia's JPN has not acknowledged the existence of any checksum.</p>
+          <p>Therefore, one is cautioned to not exclusively rely on the algorithm (or this site) to validate an IC number as of now.</p>
+          <h2><strong>Does this work for MyPR/MyKAS?</strong></h2>
+          <p>This algorithm is tested on MyKad (Malaysian Citizen) numbers, as it is easier to obtain for testing.</p>
+          <p>MyPR (Malaysian Permanent Residents) and MyKAS (Malaysian Temporary Residents) are harder to come by, and are not thoroughly validated to work with this algorithm.</p>
+          <p>However, it is assumed that the algorithm also works with MyPR/MyKAS numbers.</p>
+          <h2><strong>Is this legal?</strong></h2>
+          <p>We are not lawyers, but:</p>
+          <p>Unlike source code, algorithms cannot be copyrightable. Therefore, the use of the algorithm to check the validity of Malaysian IC Numbers therefore should be legal (assuming that this algorithm is correct). However, it is definitely illegal to use this knowledge for malicious or nefarious purposes, such as impersonation or fraud.</p>
+          <p>And of course, use at your own risk.</p>
+          <h2><strong>Conclusion</strong></h2>
+          <p>This site was created to demonstrate the validation of Malaysian IC Numbers with the ISO 7064 Mod 11,2 checksum algorithm.</p>
+          <p>The use of this specific algorithm was discovered while trying to figure out a possible form validation method for Malaysian IC numbers.</p>
+          <p>Note that this site does not validate or verify whether an IC number is assigned to a person, rather that it fits the format which IC numbers have.</p>
+          <p>It would be tremendously useful not only for software developers, but also typical users to be able to validate and verify the integrity of an IC number, especially to prevent inadvertent typos. </p>
+          <p>Therefore, it would be beneficial if JPN acknowledges the existence of the checksum algorithm used in Malaysian IC Numbers.</p>
+
+
+
+        </div>
+        <hr>
+        <small style="color:grey;margin-top:1em;">by bryan lam</small>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+      class IC {
+        static POBCodes = {
+          1: "Johor",
+          2: "Kedah",
+          3: "Kelantan",
+          4: "Malacca",
+          5: "Negeri Sembilan",
+          6: "Pahang",
+          7: "Penang",
+          8: "Perak",
+          9: "Perlis",
+          10: "Selangor",
+          11: "Terengganu",
+          12: "Sabah",
+          13: "Sarawak",
+          14: "Federal Territory of Kuala Lumpur",
+          15: "Federal Territory of Labuan",
+          16: "Federal Territory of Putrajaya",
+          21: "Johor",
+          22: "Johor",
+          23: "Johor",
+          24: "Johor",
+          25: "Kedah",
+          26: "Kedah",
+          27: "Kedah",
+          28: "Kelantan",
+          29: "Kelantan",
+          30: "Malacca",
+          31: "Negeri Sembilan",
+          32: "Pahang",
+          33: "Pahang",
+          34: "Penang",
+          35: "Penang",
+          36: "Perak",
+          37: "Perak",
+          38: "Perak",
+          39: "Perak",
+          40: "Perlis",
+          41: "Selangor",
+          42: "Selangor",
+          43: "Selangor",
+          44: "Selangor",
+          45: "Terengganu",
+          46: "Terengganu",
+          47: "Sabah",
+          48: "Sabah",
+          49: "Sabah",
+          50: "Sarawak",
+          51: "Sarawak",
+          52: "Sarawak",
+          53: "Sarawak",
+          54: "Federal Territory of Kuala Lumpur",
+          55: "Federal Territory of Kuala Lumpur",
+          56: "Federal Territory of Kuala Lumpur",
+          57: "Federal Territory of Kuala Lumpur",
+          58: "Federal Territory of Labuan",
+          59: "Negeri Sembilan",
+          60: "Brunei",
+          61: "Indonesia",
+          62: "Cambodia / Democratic Kampuchea / Kampuchea",
+          63: "Laos",
+          64: "Myanmar",
+          65: "Philippines",
+          66: "Singapore",
+          67: "Thailand",
+          68: "Vietnam",
+          71: "A person born outside Malaysia prior to 2001, excluding those born abroad without holding High Quality Identity Card",
+          72: "A person born outside Malaysia prior to 2001, excluding those born abroad without holding High Quality Identity Card",
+          74: "China",
+          75: "India",
+          76: "Pakistan",
+          77: "Saudi Arabia",
+          78: "Sri Lanka",
+          79: "Bangladesh",
+          82: "Unknown state",
+          83: "Asia-Pacific - American Samoa / Australia / Christmas Island / Cocos (Keeling) Islands / Cook Islands / Fiji / French Polynesia / Guam / Heard Island and McDonald Islands / Marshall Islands / Micronesia / New Caledonia / New Zealand / Niue / Norfolk Island / Papua New Guinea / Timor Leste / Tokelau / United States Minor Outlying Islands / Wallis and Futuna Islands",
+          84: "South America - Anguilla / Argentina / Aruba / Bolivia / Brazil / Chile / Colombia / Ecuador / French Guinea / Guadeloupe / Guyana / Paraguay / Peru / South Georgia and the South Sandwich Islands / Suriname / Uruguay / Venezuela",
+          85: "Africa - Algeria / Angola / Botswana / Burundi / Cameroon / Central African Republic / Chad / Congo-Brazzaville / Congo-Kinshasa / Djibouti / Egypt / Eritrea / Ethiopia / Gabon / Gambia / Ghana / Guinea / Kenya / Liberia / Malawi / Mali / Mauritania / Mayotte / Morocco / Mozambique / Namibia / Niger / Nigeria / Rwanda / Réunion / Senegal / Sierra Leone / Somalia / South Africa / Sudan / Swaziland / Tanzania / Togo / Tonga / Tunisia / Uganda / Western Sahara / Zaire / Zambia / Zimbabwe",
+          86: "Europe - Armenia / Austria / Belgium / Cyprus / Denmark / Faroe Islands / France / Finland / Finland, Metropolitan / Germany / Germany, Democratic Republic / Germany, Federal Republic / Greece / Holy See (Vatican City) / Italy / Luxembourg / Malta / Mediterranean / Monaco / Netherlands / North Macedonia / Norway / Portugal / Republic of Moldova / Slovakia / Slovenia / Spain / Sweden / Switzerland / United Kingdom-Dependent Territories / United Kingdom-National Overseas / United Kingdom-Overseas Citizen / United Kingdom-Protected Person / United Kingdom-Subject",
+          87: "Britain / Great Britain / Ireland",
+          88: "Middle East - Bahrain / Iran / Iraq / Palestine / Jordan / Kuwait / Lebanon / Oman / Qatar / Republic of Yemen / Syria / Turkey / United Arab Emirates / Yemen Arab Republic / Yemen People's Democratic Republic / Israel",
+          89: "Far East - Japan / North Korea / South Korea / Taiwan",
+          90: "Caribbean - Bahamas / Barbados / Belize / Costa Rica / Cuba / Dominica / Dominican Republic / El Salvador / Grenada / Guatemala / Haiti / Honduras / Jamaica / Martinique / Mexico / Nicaragua / Panama / Puerto Rico / Saint Kitts and Nevis / Saint Lucia / Saint Vincent and the Grenadines / Trinidad and Tobago / Turks and Caicos Islands / Virgin Islands (USA)",
+          91: "North America - Canada / Greenland / Netherlands Antilles / Saint Pierre and Miquelon / United States of America",
+          92: "Soviet Union / USSR - Albania / Belarus / Bosnia and Herzegovina / Bulgaria / Byelorussia / Croatia / Czech Republic / Czechoslovakia / Estonia / Georgia / Hungary / Latvia / Lithuania / Montenegro / Poland / Republic of Kosovo / Romania / Russian Federation / Serbia / Ukraine",
+          93: "Afghanistan / Andorra / Antarctica / Antigua and Barbuda / Azerbaijan / Benin / Bermuda / Bhutan / Bora Bora / Bouvet Island / British Indian Ocean Territory / Burkina Faso / Cape Verde / Cayman Islands / Comoros / Dahomey / Equatorial Guinea / Falkland Islands / French Southern Territories / Gibraltar / Guinea-Bissau / Hong Kong / Iceland / Ivory Coast / Kazakhstan / Kiribati / Kyrgyzstan / Lesotho / Libya / Liechtenstein / Macau / Madagascar / Maghribi / Malagasy / Maldives / Mauritius / Mongolia / Montserrat / Nauru / Nepal / Northern Marianas Islands / Outer Mongolia / Palau / Palestine / Pitcairn Islands / Saint Helena / Saint Lucia / Saint Vincent and the Grenadines / Samoa / San Marino / São Tomé and Príncipe / Seychelles / Solomon Islands / Svalbard and Jan Mayen Islands / Tajikistan / Turkmenistan / Tuvalu / Upper Volta / Uzbekistan / Vanuatu / Vatican City / Virgin Islands (British) / Western Samoa / Yugoslavia",
+          98: "Stateless / Stateless Person Article 1/1954",
+          99: "Mecca / Neutral Zone / No Information / Refugee / Refugee Article 1/1951 / United Nations Specialized Agency / United Nations Organization / Unspecified Nationality",
+        };
+        constructor(icNumber) {
+          this.icNumber = icNumber;
+          this.length = this.getLength();
+          this.dob = this.getDOB();
+          this.pob = this.getPOB();
+          this.gender = this.getGender();
+          this.sequence = this.getSequence();
+          this.calculatedChecksum = this.getCalculatedChecksum();
+          this.inputChecksum = this.getInputChecksum();
+          this.checksumValid = this.checkChecksum();
+        }
+        getLength() {
+          return this.icNumber.length;
+        }
+        getDOB() {
+          var month = parseInt(this.icNumber.substring(2,4));
+          var day   = parseInt(this.icNumber.substring(4,6));
+          var century = (parseInt(this.icNumber.substring(8,9)) >= 5) ? 19 : 20 ;
+          var year = century*100 + parseInt(this.icNumber.substring(0,2));
+          var dateStr = year.toString()+'-'+month.toString().padStart(2,'0')+'-'+day.toString().padStart(2,'0');
+          if (!moment(dateStr).isValid()) return false;
+          return dateStr;
+        }
+        getPOB() {
+          var pobcode = parseInt(this.icNumber.substring(6,8));
+          var pobname = IC.POBCodes[pobcode];
+          return (pobname) ? pobname : false;
+        }
+        getGender() {
+          var gendercode = parseInt(this.icNumber.slice(-1));
+          return ( gendercode % 2 == 0 ) ? 'Female' : 'Male';
+        }
+        getSequence() {
+          var seq = parseInt(this.icNumber.substring(8,11));
+          if (isNaN(seq)) return false;
+          return seq.toString().padStart(2, '0');
+        }
+        getCalculatedChecksum() {
+          var icNumberWithoutLastDigit = this.icNumber.substring(0,11);
+          if (isNaN(icNumberWithoutLastDigit)) return false;
+          return this.calculateIso7064Mod112(icNumberWithoutLastDigit);
+        }
+        getInputChecksum() {
+          return parseInt(this.icNumber.slice(-1));
+        }
+        checkChecksum() {
+          var calculatedChecksum = this.getCalculatedChecksum();
+          if (calculatedChecksum == 10) return false; 
+          var inputChecksum = this.getInputChecksum();
+          return calculatedChecksum == inputChecksum;
+        }
+        calculateIso7064Mod112(str) {
+          // ISO 7064:1983, MOD 11-2, from https://en.wikipedia.org/wiki/Resident_Identity_Card
+          var workArr = str.split('').reverse();
+          function W(i) {
+            return Math.pow(2, i - 1) % 11;
+          }
+          function S() {
+            var sum = 0;
+            for (var j=0; j<11; j++) {
+              sum += workArr[j] * W(j + 2);
+            }
+            return sum;
+          }
+          var checkDigit = (12 - (S() % 11)) % 11;
+          if (isNaN(checkDigit)) return false;
+          return (checkDigit == 10) ? 'X' : checkDigit.toString();
+        }
+      }
+
+      $('#ic').keyup(function(){
+        var icStr = $(this).val().replace(/\D/g,'');;
+        $(this).val(icStr);
+        var ic = new IC(icStr);
+        $('.val').html('');
+        var html = '';
+        if (ic.length == 12 && ic.checksumValid && ic.dob !== false && ic.pob !== false) {
+          html += 'IC Number is valid!';
+          $('#valid-val').prop('style','background-color:green;color:white;');
+        } else if (ic.length == 12 && ic.dob !== false && ic.pob !== false) {
+          html += 'IC Number might not be valid!';
+          $('#valid-val').prop('style','background-color:darkorange;color:white;');
+        } else {
+          html += 'IC Number is not valid!';
+          $('#valid-val').prop('style','background-color:red;color:white;');
+        }
+        
+        if (ic.length < 12)  html += '<br><small>Length is invalid (too short).</small>';
+        if (ic.length > 12)  html += '<br><small>Length is invalid (too long).</small>';
+        if (ic.checksumValid === false)  html += '<br><small>Checksum is invalid.</small>';
+        if (ic.dob === false)  html += '<br><small>Date of Birth is invalid.</small>';
+        if (ic.pob === false)  html += '<br><small>Place of Birth is invalid.</small>';
+
+        $('#valid-val').html(html);
+        $('#dob-val').text(ic.dob);
+        $('#pob-val').text(ic.pob);
+        $('#gender-val').text(ic.gender);
+        $('#seq-val').text(ic.sequence);
+        if (ic.checksumValid) {
+          $('#checksum-val').text(ic.inputChecksum);
+        } else if (ic.calculatedChecksum == 'X') {
+          $('#checksum-val').text(ic.inputChecksum + ' (should be '+ic.calculatedChecksum+', therefore this sequence is impossible)');
+        } else {
+          $('#checksum-val').text(ic.inputChecksum + ' (should be '+ic.calculatedChecksum+')');
+        }
+        console.log(ic);
+      });
+    </script>
+</body>
+</html>
